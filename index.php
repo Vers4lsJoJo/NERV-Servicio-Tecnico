@@ -26,6 +26,8 @@ require_admin();
     <a class="module-card" href="registro.php"><span class="module-number">01</span><h2>Registrar servicio</h2><p>Ingresar cliente, dispositivo y daño reportado.</p></a>
     <a class="module-card" href="consulta.php"><span class="module-number">02</span><h2>Consultar servicio</h2><p>Buscar una reparación por número de servicio.</p></a>
     <a class="module-card" href="administracion.php"><span class="module-number">03</span><h2>Administración técnica</h2><p>Actualizar diagnósticos y estados de reparación.</p></a>
+    <a class="module-card" href="solicitudes_admin.php"><span class="module-number">04</span><h2>Solicitudes de clientes</h2><p>Revisar solicitudes enviadas desde el portal de clientes.</p></a>
+    <a class="module-card" href="cliente_login.php" target="_blank" rel="noopener"><span class="module-number">05</span><h2>Portal del cliente</h2><p>Acceso independiente para crear solicitudes.</p></a>
   </section>
   <p class="footer-note">NERV INTERNAL SYSTEMS // AUTHORIZED PERSONNEL ONLY</p>
 </main>

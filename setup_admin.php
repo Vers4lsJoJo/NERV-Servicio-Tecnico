@@ -7,6 +7,7 @@ $count = (int)$pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn();
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $count === 0) {
+    verify_csrf();
     $username = trim((string)($_POST['username'] ?? ''));
     $password = (string)($_POST['password'] ?? '');
 
@@ -43,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $count === 0) {
     <a class="button" href="login.php">Ir al acceso</a>
   <?php else: ?>
     <form method="post">
+      <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
       <label>Nombre de usuario
         <input name="username" maxlength="80" required autocomplete="username">
       </label>

@@ -10,6 +10,7 @@ if (!empty($_SESSION['admin_id'])) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $username = trim((string)($_POST['username'] ?? ''));
     $password = (string)($_POST['password'] ?? '');
 
@@ -40,8 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <p class="eyebrow">NERV // TECHNICAL OPERATIONS</p>
   <h1>Service Control</h1>
   <p class="muted">Acceso exclusivo para personal autorizado.</p>
+  <p class="muted small-link"><a href="cliente_login.php">¿Eres cliente? Ingresa aquí</a></p>
   <?php if ($error !== ''): ?><p class="error"><?= e($error) ?></p><?php endif; ?>
   <form method="post">
+    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
     <label>Usuario
       <input name="username" required autocomplete="username">
     </label>
