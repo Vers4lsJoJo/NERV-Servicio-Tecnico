@@ -1,5 +1,28 @@
+
 <?php
-declare(strict_types=1); require_once __DIR__.'/includes/auth.php';
-$dest=!empty($_SESSION['cliente_id'])?'cliente_login.php':'login.php'; $_SESSION=[];
-if (ini_get('session.use_cookies')) { $p=session_get_cookie_params(); setcookie(session_name(),'',time()-42000,['path'=>$p['path'],'domain'=>$p['domain'],'secure'=>$p['secure'],'httponly'=>$p['httponly'],'samesite'=>'Lax']); }
-session_destroy(); header('Location: '.$dest); exit;
+session_start();
+
+// Obtener los parámetros de la cookie
+$params = session_get_cookie_params();
+
+// Eliminar la cookie de sesión
+setcookie(
+    session_name(),
+    '',
+    [
+        'expires' => time() - 42000,
+        'path' => $params['path'],
+        'domain' => $params['domain'],
+        'secure' => $params['secure'],
+        'httponly' => $params['httponly'],
+        'samesite' => $params['samesite'] ?? 'Lax'
+    ]
+);
+
+// Destruir la sesión
+$_SESSION = [];
+session_destroy();
+
+// Redirigir al inicio de sesión
+header('Location: login.php');
+exit;
