@@ -1,26 +1,24 @@
-
 <?php
 session_start();
 
-// Obtener los parámetros de la cookie
+// Obtener los parámetros actuales de la cookie
 $params = session_get_cookie_params();
 
-// Eliminar la cookie de sesión
+// Eliminar la cookie usando los argumentos individuales
 setcookie(
     session_name(),
     '',
-    [
-        'expires' => time() - 42000,
-        'path' => $params['path'],
-        'domain' => $params['domain'],
-        'secure' => $params['secure'],
-        'httponly' => $params['httponly'],
-        'samesite' => $params['samesite'] ?? 'Lax'
-    ]
+    time() - 42000,
+    $params['path'],
+    $params['domain'],
+    $params['secure'],
+    $params['httponly']
 );
 
-// Destruir la sesión
+// Vaciar los datos de sesión
 $_SESSION = [];
+
+// Destruir la sesión
 session_destroy();
 
 // Redirigir al inicio de sesión
