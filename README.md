@@ -48,3 +48,17 @@ La gestión de diagnósticos y estados utiliza las tablas `servicios` e `histori
 
 ## Seguridad y alcance
 Las contraseñas se guardan con `password_hash`; las consultas usan PDO y parámetros; los formularios de registro, login y solicitud validan CSRF; las páginas de cliente filtran los servicios por el ID de sesión. Es un paquete de desarrollo local. Antes de publicarlo en Internet se requieren HTTPS, limitación de intentos, copias de seguridad y pruebas de seguridad.
+
+## Fase 04 — Dashboard administrativo
+El panel principal (`index.php`) incorpora un resumen dinámico de solicitudes totales, pendientes, en reparación y finalizadas; distribución de servicios por estado; actividad de recepción de los últimos seis meses; y una tabla con los siete servicios modificados más recientemente. Todos los indicadores se consultan desde las tablas existentes (`servicios` y `clientes`) al cargar el panel.
+
+Esta actualización no requiere ejecutar scripts SQL ni modificar las tablas. Para instalarla, realiza una copia de seguridad de tu carpeta actual, reemplaza los archivos incluidos en el paquete y conserva `config/database.php` si tus credenciales son distintas. Inicia Apache y MySQL y abre `http://localhost/NERV-Servicio-Tecnico/login.php`.
+
+**Criterios de los indicadores:**
+- Pendientes: `RECIBIDO`, `EN DIAGNOSTICO` y `ESPERANDO APROBACION`.
+- En proceso: `EN REPARACION`.
+- Finalizados: `REPARADO`, `NO REPARABLE` y `ENTREGADO`.
+- Actividad mensual: solicitudes agrupadas por `fecha_recepcion` en los seis meses mostrados.
+- Actividad reciente: servicios ordenados por `actualizado_en`.
+
+Los gráficos y cifras se actualizan al volver a cargar el panel; no representan una conexión en tiempo real ni se actualizan automáticamente mientras la página permanece abierta.
