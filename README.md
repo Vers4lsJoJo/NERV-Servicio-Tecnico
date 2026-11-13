@@ -62,3 +62,11 @@ Esta actualización no requiere ejecutar scripts SQL ni modificar las tablas. Pa
 - Actividad reciente: servicios ordenados por `actualizado_en`.
 
 Los gráficos y cifras se actualizan al volver a cargar el panel; no representan una conexión en tiempo real ni se actualizan automáticamente mientras la página permanece abierta.
+
+## Fase 05 — Registro y consulta de servicios
+- `registro.php` permite al administrador crear una orden con datos del cliente, tipo de dispositivo, marca y descripción de la falla. El sistema asigna un código `NSC-AAAAMMDD-XXXXXXXX`, inicia el estado `RECIBIDO` y crea el primer movimiento del historial dentro de una transacción.
+- Si el correo ingresado ya pertenece a un cliente, el servicio se vincula a ese registro; si no existe, se crea una ficha básica de cliente. El correo es opcional.
+- `consulta.php` permite localizar una orden por su número y consultar cliente, equipo, fechas, falla reportada, diagnóstico, estado e historial. Desde el resultado se puede abrir la ficha administrativa para gestionar la reparación.
+- Si administración creó previamente la ficha del cliente con un correo, `cliente_registro.php` permite que esa persona active su cuenta utilizando el mismo correo, sin duplicar el registro ni perder sus órdenes.
+
+Esta fase reutiliza las tablas existentes y no requiere ejecutar una migración SQL. Se recomienda probar el registro con un correo nuevo, con un correo ya asociado a una cuenta y sin correo; luego buscar cada orden por su código.
