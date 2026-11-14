@@ -10,7 +10,7 @@ $historial = [];
 $error = '';
 
 if ($numero !== '') {
-    if (mb_strlen($numero) > 30) {
+    if (text_length($numero) > 30) {
         $error = 'El número de servicio no es válido.';
     } else {
         $stmt = $pdo->prepare(
@@ -18,7 +18,7 @@ if ($numero !== '') {
                     s.diagnostico,s.estado,s.fecha_recepcion,s.fecha_finalizacion,s.actualizado_en,
                     c.nombre AS cliente_nombre,c.email,c.telefono
              FROM servicios s INNER JOIN clientes c ON c.id_cliente=s.id_cliente
-             WHERE s.numero_servicio=:numero LIMIT 1'
+             WHERE s.numero_servicio=:numero AND s.eliminado_en IS NULL LIMIT 1'
         );
         $stmt->execute([':numero' => $numero]);
         $servicio = $stmt->fetch() ?: null;
@@ -47,7 +47,7 @@ if ($numero !== '') {
 <body>
 <header class="topbar">
   <a class="brand" href="index.php"><span class="brand-mark">N</span>NERV <span class="muted">/ SERVICE CONTROL</span></a>
-  <div class="topbar-right"><a href="index.php">COMMAND CENTER</a><a href="logout.php">CERRAR SESIÓN</a></div>
+  <div class="topbar-right"><a href="index.php">COMMAND CENTER</a><form class="logout-form" method="post" action="logout.php"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><button type="submit" class="nav-logout">CERRAR SESIÓN</button></form></div>
 </header>
 <main class="container">
   <section class="hero">

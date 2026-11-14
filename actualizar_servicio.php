@@ -9,12 +9,12 @@ $id = filter_var($_POST['id_servicio'] ?? null, FILTER_VALIDATE_INT);
 $diagnostico = trim((string)($_POST['diagnostico'] ?? ''));
 $estado = trim((string)($_POST['estado'] ?? ''));
 $estados = ['RECIBIDO','EN DIAGNOSTICO','ESPERANDO APROBACION','EN REPARACION','REPARADO','NO REPARABLE','ENTREGADO'];
-if (!$id || $id < 1 || !in_array($estado, $estados, true)) { http_response_code(400); exit('Los datos enviados no son válidos.'); }
+if (!$id || $id < 1 || !in_array($estado, $estados, true) || text_length($diagnostico) > 10000) { http_response_code(400); exit('Los datos enviados no son válidos.'); }
 $finales = ['REPARADO','NO REPARABLE','ENTREGADO'];
 if (in_array($estado, $finales, true) && $diagnostico === '') { http_response_code(422); exit('Debes registrar un diagnóstico antes de cerrar o entregar una reparación. Regresa al detalle del servicio e inténtalo nuevamente.'); }
 try {
     $pdo->beginTransaction();
-    $q = $pdo->prepare('SELECT estado,diagnostico FROM servicios WHERE id_servicio=:id FOR UPDATE');
+    $q = $pdo->prepare('SELECT estado,diagnostico FROM servicios WHERE id_servicio=:id AND eliminado_en IS NULL FOR UPDATE');
     $q->execute([':id'=>$id]);
     $actual = $q->fetch();
     if (!$actual) { $pdo->rollBack(); http_response_code(404); exit('No se encontró el servicio.'); }

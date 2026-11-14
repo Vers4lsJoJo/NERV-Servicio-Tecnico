@@ -20,7 +20,7 @@ $resumen = $pdo->query(
         SUM(estado IN ('RECIBIDO','EN DIAGNOSTICO','ESPERANDO APROBACION')) AS pendientes,
         SUM(estado = 'EN REPARACION') AS en_proceso,
         SUM(estado IN ('REPARADO','NO REPARABLE','ENTREGADO')) AS finalizados
-     FROM servicios"
+     FROM servicios WHERE eliminado_en IS NULL"
 )->fetch() ?: [];
 
 $total = (int)($resumen['total'] ?? 0);
@@ -29,7 +29,7 @@ $enProceso = (int)($resumen['en_proceso'] ?? 0);
 $finalizados = (int)($resumen['finalizados'] ?? 0);
 
 $consultaEstados = $pdo->query(
-    'SELECT estado, COUNT(*) AS cantidad FROM servicios GROUP BY estado'
+    'SELECT estado, COUNT(*) AS cantidad FROM servicios WHERE eliminado_en IS NULL GROUP BY estado'
 );
 $conteoEstados = array_fill_keys(array_keys($estados), 0);
 foreach ($consultaEstados->fetchAll() as $fila) {
@@ -53,7 +53,7 @@ for ($i = 5; $i >= 0; $i--) {
 $desde = array_key_first($meses) . '-01 00:00:00';
 $consultaMeses = $pdo->prepare(
     'SELECT DATE_FORMAT(fecha_recepcion, "%Y-%m") AS periodo, COUNT(*) AS cantidad
-     FROM servicios WHERE fecha_recepcion >= :desde
+     FROM servicios WHERE eliminado_en IS NULL AND fecha_recepcion >= :desde
      GROUP BY DATE_FORMAT(fecha_recepcion, "%Y-%m") ORDER BY periodo'
 );
 $consultaMeses->execute([':desde' => $desde]);
@@ -70,6 +70,7 @@ $recientes = $pdo->query(
             s.estado, s.actualizado_en, c.nombre AS cliente_nombre
      FROM servicios s
      INNER JOIN clientes c ON c.id_cliente = s.id_cliente
+     WHERE s.eliminado_en IS NULL
      ORDER BY s.actualizado_en DESC, s.id_servicio DESC
      LIMIT 7'
 )->fetchAll();
@@ -86,7 +87,7 @@ $recientes = $pdo->query(
 <body>
 <header class="topbar">
   <a class="brand" href="index.php"><span class="brand-mark">N</span>NERV <span class="muted">/ SERVICE CONTROL</span></a>
-  <div class="topbar-right"><span class="status-dot"></span> SYSTEM ONLINE <a href="logout.php">CERRAR SESIÓN</a></div>
+  <div class="topbar-right"><span class="status-dot"></span> SYSTEM ONLINE <form class="logout-form" method="post" action="logout.php"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><button type="submit" class="nav-logout">CERRAR SESIÓN</button></form></div>
 </header>
 <main class="container dashboard-container">
   <section class="hero dashboard-hero">
@@ -162,7 +163,8 @@ $recientes = $pdo->query(
       <a class="module-card" href="consulta.php"><span class="module-number">02</span><h2>Consultar servicio</h2><p>Buscar una reparación por número de servicio.</p></a>
       <a class="module-card" href="administracion.php"><span class="module-number">03</span><h2>Administración técnica</h2><p>Gestionar servicios, diagnósticos, estados e historial.</p></a>
       <a class="module-card" href="solicitudes_admin.php"><span class="module-number">04</span><h2>Solicitudes de clientes</h2><p>Revisar solicitudes enviadas desde el portal de clientes.</p></a>
-      <a class="module-card" href="cliente_login.php" target="_blank" rel="noopener"><span class="module-number">05</span><h2>Portal del cliente</h2><p>Acceso independiente para crear solicitudes.</p></a>
+      <a class="module-card" href="gestion_registros.php"><span class="module-number">05</span><h2>Gestión de registros</h2><p>Archivar registros de prueba y restaurar servicios cuando sea necesario.</p></a>
+      <a class="module-card" href="cliente_login.php" target="_blank" rel="noopener"><span class="module-number">06</span><h2>Portal del cliente</h2><p>Acceso independiente para crear solicitudes.</p></a>
     </div>
   </section>
   <p class="footer-note">NERV INTERNAL SYSTEMS // AUTHORIZED PERSONNEL ONLY</p>

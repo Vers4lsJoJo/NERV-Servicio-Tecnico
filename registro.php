@@ -6,6 +6,12 @@ require_admin();
 
 $error = '';
 $numeroCreado = '';
+$codigoActivacion = '';
+if (isset($_GET['registrado']) && !empty($_SESSION['flash_registro']) && is_array($_SESSION['flash_registro'])) {
+    $numeroCreado = (string)($_SESSION['flash_registro']['numero'] ?? '');
+    $codigoActivacion = (string)($_SESSION['flash_registro']['codigo'] ?? '');
+    unset($_SESSION['flash_registro']);
+}
 $tipos = ['Computador de escritorio', 'Portátil', 'Tablet', 'Teléfono móvil', 'Consola', 'Otro dispositivo'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -17,9 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $marca = trim((string)($_POST['marca'] ?? ''));
     $descripcion = trim((string)($_POST['descripcion_dano'] ?? ''));
 
-    if ($nombre === '' || !in_array($tipo, $tipos, true) || $marca === '' || mb_strlen($descripcion) < 10) {
+    if ($nombre === '' || text_length($nombre) > 120 || !in_array($tipo, $tipos, true) || $marca === '' || text_length($marca) > 80 || text_length($descripcion) < 10 || text_length($descripcion) > 5000 || text_length($telefono) > 30) {
         $error = 'Completa los campos obligatorios y describe el daño con al menos 10 caracteres.';
-    } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } elseif ($email !== '' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || text_length($email) > 190)) {
         $error = 'Ingresa un correo electrónico válido o deja el campo vacío.';
     } else {
         try {
@@ -28,21 +34,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Si el correo ya existe, se reutiliza el registro del cliente.
             if ($email !== '') {
-                $buscarCliente = $pdo->prepare('SELECT id_cliente FROM clientes WHERE email = :email LIMIT 1 FOR UPDATE');
+                $buscarCliente = $pdo->prepare('SELECT id_cliente,password_hash FROM clientes WHERE email = :email LIMIT 1 FOR UPDATE');
                 $buscarCliente->execute([':email' => $email]);
                 $clienteExistente = $buscarCliente->fetch();
                 if ($clienteExistente) {
                     $idCliente = (int)$clienteExistente['id_cliente'];
+                    if (empty($clienteExistente['password_hash'])) {
+                        $codigoActivacion = strtoupper(bin2hex(random_bytes(12)));
+                        $actualizarCliente = $pdo->prepare('UPDATE clientes SET nombre=:nombre, telefono=:telefono, codigo_activacion_hash=:hash, codigo_activacion_expira=DATE_ADD(NOW(), INTERVAL 7 DAY) WHERE id_cliente=:id');
+                        $actualizarCliente->execute([
+                            ':nombre' => $nombre,
+                            ':telefono' => $telefono !== '' ? $telefono : null,
+                            ':hash' => hash('sha256', $codigoActivacion),
+                            ':id' => $idCliente,
+                        ]);
+                    }
                 }
             }
 
             if ($idCliente === null) {
-                $crearCliente = $pdo->prepare('INSERT INTO clientes(nombre,email,telefono) VALUES(:nombre,:email,:telefono)');
-                $crearCliente->execute([
-                    ':nombre' => $nombre,
-                    ':email' => $email !== '' ? $email : null,
-                    ':telefono' => $telefono !== '' ? $telefono : null,
-                ]);
+                if ($email !== '') {
+                    $codigoActivacion = strtoupper(bin2hex(random_bytes(12)));
+                    $crearCliente = $pdo->prepare('INSERT INTO clientes(nombre,email,telefono,codigo_activacion_hash,codigo_activacion_expira) VALUES(:nombre,:email,:telefono,:hash,DATE_ADD(NOW(), INTERVAL 7 DAY))');
+                    $crearCliente->execute([
+                        ':nombre' => $nombre,
+                        ':email' => $email,
+                        ':telefono' => $telefono !== '' ? $telefono : null,
+                        ':hash' => hash('sha256', $codigoActivacion),
+                    ]);
+                } else {
+                    $crearCliente = $pdo->prepare('INSERT INTO clientes(nombre,email,telefono) VALUES(:nombre,NULL,:telefono)');
+                    $crearCliente->execute([':nombre' => $nombre, ':telefono' => $telefono !== '' ? $telefono : null]);
+                }
                 $idCliente = (int)$pdo->lastInsertId();
             }
 
@@ -61,6 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $historial = $pdo->prepare("INSERT INTO historial_servicios(id_servicio,estado_anterior,estado_nuevo,diagnostico,cambiado_por) VALUES(:servicio,NULL,'RECIBIDO',NULL,:admin)");
             $historial->execute([':servicio' => $idServicio, ':admin' => (int)$_SESSION['admin_id']]);
             $pdo->commit();
+            $_SESSION['flash_registro'] = ['numero' => $numeroCreado, 'codigo' => $codigoActivacion];
+            header('Location: registro.php?registrado=1');
+            exit;
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log($exception->getMessage());
@@ -81,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 <header class="topbar">
   <a class="brand" href="index.php"><span class="brand-mark">N</span>NERV <span class="muted">/ SERVICE CONTROL</span></a>
-  <div class="topbar-right"><a href="index.php">COMMAND CENTER</a><a href="logout.php">CERRAR SESIÓN</a></div>
+  <div class="topbar-right"><a href="index.php">COMMAND CENTER</a><form class="logout-form" method="post" action="logout.php"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><button type="submit" class="nav-logout">CERRAR SESIÓN</button></form></div>
 </header>
 <main class="container">
   <section class="hero">
@@ -96,6 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <p>Número de servicio asignado:</p>
       <strong class="service-number"><?= e($numeroCreado) ?></strong>
       <p>El servicio quedó registrado con estado <strong>RECIBIDO</strong>.</p>
+      <?php if ($codigoActivacion !== ''): ?>
+        <div class="activation-code-panel"><strong>CÓDIGO DE ACTIVACIÓN DEL PORTAL</strong><p class="activation-code"><?= e($codigoActivacion) ?></p><p>Entrega este código directamente al cliente. Es válido durante 7 días y solo puede utilizarse una vez. No lo publiques ni lo compartas con terceros.</p></div>
+      <?php endif; ?>
       <div class="action-row">
         <a class="button" href="consulta.php?numero=<?= rawurlencode($numeroCreado) ?>">Consultar este servicio</a>
         <a class="text-link" href="registro.php">Registrar otro</a>

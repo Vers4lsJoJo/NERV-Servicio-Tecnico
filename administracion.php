@@ -8,7 +8,7 @@ $estados = ['RECIBIDO','EN DIAGNOSTICO','ESPERANDO APROBACION','EN REPARACION','
 $filtro = trim((string)($_GET['estado'] ?? ''));
 $buscar = trim((string)($_GET['buscar'] ?? ''));
 if ($filtro !== '' && !in_array($filtro, $estados, true)) $filtro = '';
-$sql = 'SELECT s.id_servicio,s.numero_servicio,c.nombre,s.tipo_dispositivo,s.marca,s.estado,s.fecha_recepcion FROM servicios s INNER JOIN clientes c ON c.id_cliente=s.id_cliente WHERE 1=1';
+$sql = 'SELECT s.id_servicio,s.numero_servicio,c.nombre,s.tipo_dispositivo,s.marca,s.estado,s.fecha_recepcion FROM servicios s INNER JOIN clientes c ON c.id_cliente=s.id_cliente WHERE s.eliminado_en IS NULL';
 $params = [];
 if ($filtro !== '') { $sql .= ' AND s.estado=:estado'; $params[':estado'] = $filtro; }
 if ($buscar !== '') { $sql .= ' AND (s.numero_servicio LIKE :buscar_numero OR c.nombre LIKE :buscar_cliente OR s.marca LIKE :buscar_marca)'; $term = '%'.$buscar.'%'; $params[':buscar_numero'] = $term; $params[':buscar_cliente'] = $term; $params[':buscar_marca'] = $term; }
@@ -21,7 +21,7 @@ $servicios = $stmt->fetchAll();
 <html lang="es">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Administración técnica | NERV</title><link rel="stylesheet" href="assets/css/style.css"></head>
 <body>
-<header class="topbar"><a class="brand" href="index.php"><span class="brand-mark">N</span>NERV <span class="muted">/ SERVICE CONTROL</span></a><div class="topbar-right"><a href="index.php">COMMAND CENTER</a><a href="logout.php">CERRAR SESIÓN</a></div></header>
+<header class="topbar"><a class="brand" href="index.php"><span class="brand-mark">N</span>NERV <span class="muted">/ SERVICE CONTROL</span></a><div class="topbar-right"><a href="index.php">COMMAND CENTER</a><form class="logout-form" method="post" action="logout.php"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><button type="submit" class="nav-logout">CERRAR SESIÓN</button></form></div></header>
 <main class="container">
 <section class="hero"><p class="eyebrow">TECHNICAL OPERATIONS</p><h1>ADMINISTRACIÓN TÉCNICA</h1><p class="muted">Consulta las reparaciones, registra diagnósticos y actualiza su estado.</p></section>
 <?php if (isset($_GET['actualizado'])): ?><p class="notice">Los cambios del servicio se guardaron correctamente.</p><?php endif; ?>

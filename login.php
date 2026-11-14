@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($admin && password_verify($password, $admin['password_hash'])) {
         session_regenerate_id(true);
+        unset($_SESSION['csrf_token']);
         $_SESSION['admin_id'] = (int)$admin['id_usuario'];
         $_SESSION['admin_name'] = $admin['nombre_usuario'];
         header('Location: index.php');

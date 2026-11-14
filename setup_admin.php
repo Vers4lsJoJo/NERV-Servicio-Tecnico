@@ -4,6 +4,7 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/auth.php';
 
 $count = (int)$pdo->query('SELECT COUNT(*) FROM usuarios')->fetchColumn();
+if ($count > 0) { http_response_code(404); exit('Recurso no disponible.'); }
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $count === 0) {
